@@ -95,6 +95,15 @@
     display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;}
   .wam-hole.up{background:#2e7d32;}
   #wam-score{margin-top:16px;font-size:18px;color:#ccc;}
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-14px);}
+    40%{transform:translateX(12px);}
+    60%{transform:translateX(-8px);}
+    80%{transform:translateX(6px);}
+  }
+  .shake{animation:shake .4s ease;}
 </style>
 </head>
 <body>
@@ -210,7 +219,22 @@
     <button id="game-back">Back</button>
   </div>
 
+  <!-- 7. PANIC SCREEN -->
+  <div class="screen hidden" id="panic-screen" style="background:#000;">
+  </div>
+
+  <!-- 8. RECAP SCREEN -->
+  <div class="screen hidden" id="recap-screen">
+    <div id="recap-box" style="max-width:480px;background:#0d0d0d;border:1px solid #262626;
+      border-radius:14px;padding:32px 28px;">
+      <h1 style="font-size:26px;margin:0 0 6px;">That's a wrap</h1>
+      <div id="recap-summary" style="color:#ccc;font-size:14px;line-height:1.6;margin:16px 0;text-align:left;"></div>
+      <button class="btn" id="recap-close">Close</button>
+    </div>
+  </div>
+
 </div>
+<canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:50;display:none;"></canvas>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -298,6 +322,43 @@ document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   document.getElementById("sound-toggle").textContent = soundEnabled ? "🔊 Sound on" : "🔇 Sound off";
 });
+
+// ===== CONFETTI / SHAKE EFFECTS =====
+const confettiCanvas = document.getElementById("confetti-canvas");
+const confettiCtx = confettiCanvas.getContext("2d");
+function fireConfetti(){
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+  confettiCanvas.style.display = "block";
+  const colors = ["#3ea6ff","#8bc34a","#ffeb3b","#e91e63","#ff9800"];
+  const pieces = Array.from({length:120}, () => ({
+    x: Math.random()*confettiCanvas.width, y: -20 - Math.random()*200,
+    vx: (Math.random()-0.5)*4, vy: 2+Math.random()*4,
+    size: 4+Math.random()*6, color: colors[Math.floor(Math.random()*colors.length)],
+    rot: Math.random()*360, vr: (Math.random()-0.5)*10
+  }));
+  let frames = 0;
+  function loop(){
+    frames++;
+    confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      confettiCtx.save();
+      confettiCtx.translate(p.x, p.y);
+      confettiCtx.rotate(p.rot*Math.PI/180);
+      confettiCtx.fillStyle = p.color;
+      confettiCtx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      confettiCtx.restore();
+    });
+    if(frames < 130){ requestAnimationFrame(loop); }
+    else{ confettiCanvas.style.display = "none"; }
+  }
+  loop();
+}
+function shakeScreen(){
+  document.getElementById("app").classList.add("shake");
+  setTimeout(()=> document.getElementById("app").classList.remove("shake"), 400);
+}
 
 async function setupMic(){
   try{
@@ -430,13 +491,22 @@ function listenToRoom(){
     if(data.status === "answered"){
       document.getElementById("answer-text").textContent = data.answer || "...";
       document.getElementById("answer-q").textContent = currentQuestion ? `"${currentQuestion}"` : "";
-      if(data.answerFeedback === "correct") playDing();
-      if(data.answerFeedback === "wrong") playBuzz();
+      if(data.answerFeedback === "correct"){ playDing(); fireConfetti(); }
+      if(data.answerFeedback === "wrong"){ playBuzz(); shakeScreen(); }
       show("answer-screen");
     }
     if(data.status === "game" && data.game){
       show("game-screen");
       renderGame(data.game);
+    }
+    if(data.status === "panic"){
+      if(snakeLoopHandle) clearInterval(snakeLoopHandle);
+      if(wamSpawnHandle) clearInterval(wamSpawnHandle);
+      show("panic-screen");
+    }
+    if(data.status === "recap"){
+      document.getElementById("recap-summary").innerHTML = data.recapHtml || "Thanks for playing!";
+      show("recap-screen");
     }
   }, (err) => {
     document.getElementById("fb-diag").textContent = "Error reading room: " + err.message;
@@ -467,6 +537,7 @@ function endSession(){
 }
 document.getElementById("back-btn").addEventListener("click", endSession);
 document.getElementById("game-back").addEventListener("click", endSession);
+document.getElementById("recap-close").addEventListener("click", endSession);
 
 ["choice-yes","choice-no"].forEach(id=>{
   const el = document.getElementById(id);
@@ -533,7 +604,8 @@ function renderTTT(game, isNewGame){
   const statusEl = document.getElementById("ttt-status");
   const prevWinner = statusEl.dataset.prevWinner || "";
   if(state.winner && state.winner !== prevWinner){
-    if(state.winner === "player") playDing(); else if(state.winner === "admin") playBuzz();
+    if(state.winner === "player"){ playDing(); fireConfetti(); }
+    else if(state.winner === "admin"){ playBuzz(); shakeScreen(); }
   }
   statusEl.dataset.prevWinner = state.winner || "";
   if(state.winner){
@@ -703,7 +775,8 @@ function renderRPS(game){
   const statusEl = document.getElementById("rps-round-status");
   const prevResult = statusEl.dataset.prevResult || "";
   if(state.result && state.result !== prevResult){
-    if(state.result === "player") playDing(); else if(state.result === "admin") playBuzz();
+    if(state.result === "player"){ playDing(); fireConfetti(); }
+    else if(state.result === "admin"){ playBuzz(); shakeScreen(); }
   }
   statusEl.dataset.prevResult = (state.result || "") + (state.playerScore||0) + (state.adminScore||0);
   if(state.result){
