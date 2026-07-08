@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindReader</title>
+<style>
+  :root{
+    --bg:#000; --panel:#111; --accent:#fff; --muted:#9aa0a6; --line:#3ea6ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--accent);
+    font-family:"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden;}
+  #app{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;}
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:24px;text-align:center;transition:opacity .4s ease;}
+  .hidden{opacity:0;pointer-events:none;}
+
+  #tos-box{max-width:560px;background:#0d0d0d;border:1px solid #262626;border-radius:14px;
+    padding:32px 28px;}
+  #tos-box h1{font-size:26px;margin:0 0 6px;}
+  #tos-box .sub{color:var(--muted);font-size:14px;margin-bottom:18px;}
+  #tos-text{max-height:220px;overflow-y:auto;text-align:left;font-size:13px;line-height:1.5;
+    color:#ccc;background:#000;border:1px solid #222;border-radius:8px;padding:14px;margin-bottom:20px;}
+  #tos-text p{margin:0 0 10px;}
+  .check-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:20px;font-size:14px;color:#ccc;}
+  button{cursor:pointer;font-family:inherit;}
+  .btn{background:#fff;color:#000;border:none;border-radius:20px;padding:10px 26px;
+    font-size:15px;font-weight:600;transition:transform .15s ease;}
+  .btn:disabled{background:#333;color:#777;cursor:not-allowed;}
+  .btn:not(:disabled):hover{transform:scale(1.04);}
+
+  #cam-box{position:absolute;top:0;left:0;width:280px;height:210px;background:#000;
+    border-bottom:1px solid #222;border-right:1px solid #222;overflow:hidden;z-index:5;}
+  #cam-box video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+  #cam-label{position:absolute;top:8px;left:12px;font-size:13px;color:#aaa;z-index:6;
+    text-shadow:0 0 4px #000;}
+  #top-right-toggles{position:absolute;top:10px;right:10px;z-index:7;display:flex;gap:8px;}
+  .tiny-toggle{background:#111;border:1px solid #333;color:#ccc;border-radius:6px;
+    padding:6px 10px;font-size:12px;cursor:pointer;}
+
+  #question-screen{width:100%;height:100%;}
+  #q-text{font-size:40px;font-weight:400;max-width:70%;line-height:1.3;}
+  #choices{position:absolute;bottom:110px;left:0;width:100%;display:flex;
+    justify-content:center;gap:120px;flex-wrap:wrap;}
+  .choice-wrap{position:relative;}
+  .choice{font-size:34px;color:#fff;padding:14px 30px;border-radius:6px;border:2px solid transparent;}
+  .choice.hover{border-color:var(--line);}
+  #multi-choices{position:absolute;bottom:110px;left:0;width:100%;display:flex;
+    justify-content:center;gap:20px;flex-wrap:wrap;padding:0 20px;}
+  .multi-choice{font-size:22px;color:#fff;padding:14px 24px;border-radius:8px;border:2px solid #333;
+    background:#111;min-width:120px;}
+  .multi-choice:hover{border-color:var(--line);}
+  #back-btn{position:absolute;bottom:36px;right:48px;font-size:26px;color:#ddd;
+    background:none;border:none;}
+
+  #listen-screen{width:100%;}
+  #listen-title{font-size:32px;margin-bottom:26px;}
+  #bars{display:flex;align-items:flex-end;gap:6px;height:80px;justify-content:center;margin-bottom:20px;}
+  .bar{width:8px;background:linear-gradient(#3ea6ff,#8ab4f8);border-radius:3px;height:6px;
+    transition:height .08s ease;}
+  #listen-sub{color:var(--muted);font-size:14px;}
+
+  #answer-screen{width:100%;}
+  #answer-text{font-size:56px;font-weight:700;}
+  #answer-q{color:var(--muted);font-size:18px;margin-top:16px;}
+
+  #waiting-screen .dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:#fff;margin:0 3px;animation:blink 1.4s infinite both;}
+  .dot:nth-child(2){animation-delay:.2s;}
+  .dot:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+  #waiting-screen p{font-size:20px;color:#ccc;}
+
+  #game-screen{width:100%;height:100%;}
+  #game-title{font-size:24px;margin-bottom:14px;color:#ccc;}
+  #ttt-grid{display:grid;gap:8px;margin:0 auto;}
+  .ttt-cell{background:#111;border:2px solid #333;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;
+    cursor:pointer;color:#fff;}
+  .ttt-cell:hover{border-color:var(--line);}
+  #ttt-status{margin-top:16px;font-size:18px;color:#ccc;}
+  #snake-canvas{background:#0a0a0a;border:2px solid #333;border-radius:8px;}
+  #snake-score{margin-top:10px;font-size:16px;color:#ccc;}
+  #game-back{position:absolute;bottom:24px;right:32px;font-size:16px;color:#888;background:none;border:none;}
+
+  #reaction-area{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;transition:background-color .1s ease;}
+  #reaction-text{font-size:36px;}
+  #reaction-result{font-size:20px;color:#ccc;margin-top:14px;}
+
+  #wam-grid{display:grid;gap:10px;margin:0 auto;}
+  .wam-hole{width:70px;height:70px;background:#1a1a1a;border-radius:50%;border:2px solid #333;
+    display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;}
+  .wam-hole.up{background:#2e7d32;}
+  #wam-score{margin-top:16px;font-size:18px;color:#ccc;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="top-right-toggles">
+    <button id="cam-toggle" class="tiny-toggle" style="display:none;">Show my cam</button>
+    <button id="sound-toggle" class="tiny-toggle">🔊 Sound on</button>
+  </div>
+  <div id="cam-box" style="display:none;">
+    <div id="cam-label">you</div>
+    <video id="cam-video" autoplay muted playsinline></video>
+  </div>
+
+  <!-- 1. TERMS OF SERVICE -->
+  <div class="screen" id="tos-screen">
+    <div id="tos-box">
+      <h1>Before we begin</h1>
+      <div class="sub">MindReader needs your consent to continue</div>
+      <div id="tos-text">
+        <p><strong>What this is:</strong> a party game. Someone you know has sent you this link
+        to play a "mind reading" game with them, live.</p>
+        <p><strong>Microphone / camera:</strong> if you allow access, this page reads live
+        audio volume to animate the "analyzing" effect on screen — <strong>and if you allow it,
+        the person running this game can also listen to your microphone and/or watch your
+        camera live, in real time</strong>. Nothing is ever recorded or saved by this app.</p>
+        <p><strong>What is transmitted:</strong> your Yes/No/typed answers, and if you play a
+        mini-game, your moves in that game — all sent to the person running the game so they
+        can react live.</p>
+        <p><strong>Your control:</strong> you can deny mic/camera access and still play — the
+        game just skips the "analyzing" animation. You can close this tab at any time.</p>
+      </div>
+      <label class="check-row">
+        <input type="checkbox" id="tos-check">
+        I understand and agree to play
+      </label>
+      <br>
+      <div id="room-code-row" style="margin-bottom:16px;display:none;">
+        <label style="display:block;font-size:13px;color:#aaa;margin-bottom:6px;">
+          Enter the room code they gave you:
+        </label>
+        <input type="text" id="room-code-input" placeholder="ABC123"
+          style="text-align:center;letter-spacing:2px;text-transform:uppercase;font-size:18px;
+          padding:8px 12px;border-radius:8px;border:1px solid #333;background:#000;color:#fff;width:160px;">
+        <div id="reconnect-hint" style="font-size:12px;color:#666;margin-top:8px;display:none;"></div>
+      </div>
+      <button class="btn" id="tos-continue" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- 2. WAITING FOR ADMIN / ROOM CONNECT -->
+  <div class="screen hidden" id="waiting-screen">
+    <p>Connecting<span class="dot"></span><span class="dot"></span><span class="dot"></span></p>
+    <p id="fb-diag" style="font-size:12px;color:#666;margin-top:20px;"></p>
+  </div>
+
+  <!-- 3. QUESTION SCREEN -->
+  <div class="screen hidden" id="question-screen">
+    <div id="q-text">Waiting for a question...</div>
+    <div id="choices">
+      <div class="choice-wrap"><div class="choice" id="choice-yes">Yes</div></div>
+      <div class="choice-wrap"><div class="choice" id="choice-no">No</div></div>
+    </div>
+    <div id="multi-choices"></div>
+    <div id="text-answer-row" style="display:none;position:absolute;bottom:110px;left:50%;
+      transform:translateX(-50%);width:min(500px,80%);text-align:center;">
+      <input type="text" id="text-answer-input" placeholder="Type your answer..."
+        style="width:100%;font-size:20px;padding:12px 16px;border-radius:8px;border:1px solid #333;
+        background:#0d0d0d;color:#fff;margin-bottom:12px;">
+      <br>
+      <button class="btn" id="text-answer-submit">Submit</button>
+    </div>
+    <button id="back-btn">Back</button>
+  </div>
+
+  <!-- 4. LISTENING / ANALYZING -->
+  <div class="screen hidden" id="listen-screen">
+    <div id="listen-title">Analyzing voice patterns...</div>
+    <div id="bars"></div>
+    <div id="listen-sub">Reading micro-expressions and vocal stress</div>
+  </div>
+
+  <!-- 5. ANSWER REVEAL -->
+  <div class="screen hidden" id="answer-screen">
+    <div id="answer-text">...</div>
+    <div id="answer-q"></div>
+  </div>
+
+  <!-- 6. GAME SCREEN -->
+  <div class="screen hidden" id="game-screen">
+    <div id="game-title">Game</div>
+    <div id="ttt-grid" style="display:none;"></div>
+    <div id="ttt-status" style="display:none;"></div>
+    <canvas id="snake-canvas" width="400" height="400" style="display:none;"></canvas>
+    <div id="snake-score" style="display:none;"></div>
+    <div id="rps-area" style="display:none;">
+      <div id="rps-round-status" style="font-size:18px;color:#ccc;margin-bottom:20px;">Choose your move</div>
+      <div class="row" style="display:flex;gap:24px;justify-content:center;">
+        <button class="btn rps-choice" data-choice="rock">🪨 Rock</button>
+        <button class="btn rps-choice" data-choice="paper">📄 Paper</button>
+        <button class="btn rps-choice" data-choice="scissors">✂️ Scissors</button>
+      </div>
+      <div id="rps-score" style="margin-top:20px;font-size:16px;color:#ccc;">You: 0 — Them: 0</div>
+    </div>
+    <div id="reaction-area" style="display:none;">
+      <div id="reaction-text">Get ready...</div>
+      <div id="reaction-result"></div>
+    </div>
+    <div id="wam-area" style="display:none;">
+      <div id="wam-grid"></div>
+      <div id="wam-score">Score: 0</div>
+    </div>
+    <button id="game-back">Back</button>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ====== PASTE YOUR FIREBASE CONFIG HERE ======
+const firebaseConfig = {
+  apiKey: "AIzaSyDyAKTWeowIA-Ohrcb-MIKHaVLwIq9Hh5A",
+  authDomain: "to-tell-my-wife-i-love-her.firebaseapp.com",
+  databaseURL: "https://to-tell-my-wife-i-love-her-default-rtdb.firebaseio.com",
+  projectId: "to-tell-my-wife-i-love-her",
+  storageBucket: "to-tell-my-wife-i-love-her.firebasestorage.app",
+  messagingSenderId: "717886106980",
+  appId: "1:717886106980:web:9b139d30aafd25f709de71"
+};
+// ==============================================
+
+const params = new URLSearchParams(location.search);
+let roomId = params.get("room");
+const lastRoom = localStorage.getItem("mindprank_last_room");
+if(!roomId){
+  document.getElementById("room-code-row").style.display = "block";
+  if(lastRoom){
+    document.getElementById("room-code-input").value = lastRoom;
+    const hint = document.getElementById("reconnect-hint");
+    hint.style.display = "block";
+    hint.textContent = `Prefilled with your last room code (${lastRoom}) — change it if this is a new game.`;
+  }
+}
+
+const show = id => {
+  document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+};
+
+const tosCheck = document.getElementById("tos-check");
+const tosContinue = document.getElementById("tos-continue");
+tosCheck.addEventListener("change", () => tosContinue.disabled = !tosCheck.checked);
+
+let db = null;
+try{
+  if(firebaseConfig.apiKey === "PASTE_ME" || !firebaseConfig.databaseURL){
+    throw new Error("Firebase config not filled in yet");
+  }
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+}catch(e){
+  console.error("Firebase init failed:", e);
+  const warn = document.createElement("div");
+  warn.style.cssText = "position:absolute;top:8px;left:50%;transform:translateX(-50%);" +
+    "background:#5c1a1a;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:99;";
+  warn.textContent = "Setup error: Firebase config missing/invalid in player.html — check the console.";
+  document.body.appendChild(warn);
+}
+
+let roomRef = null;
+let audioCtx, analyser, micStream, dataArray;
+let barsEl = document.getElementById("bars");
+for (let i=0;i<28;i++){
+  const b = document.createElement("div");
+  b.className = "bar";
+  barsEl.appendChild(b);
+}
+const barEls = [...barsEl.children];
+
+// ===== SOUND EFFECTS =====
+let soundEnabled = true;
+let sfxCtx = null;
+function beep(freq, dur, type){
+  if(!soundEnabled) return;
+  try{
+    if(!sfxCtx) sfxCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = sfxCtx.createOscillator();
+    const gain = sfxCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, sfxCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, sfxCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(sfxCtx.destination);
+    osc.start(); osc.stop(sfxCtx.currentTime + dur);
+  }catch(e){}
+}
+function playDing(){ beep(880,0.15); setTimeout(()=>beep(1320,0.2),100); }
+function playBuzz(){ beep(140,0.35,"sawtooth"); }
+document.getElementById("sound-toggle").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  document.getElementById("sound-toggle").textContent = soundEnabled ? "🔊 Sound on" : "🔇 Sound off";
+});
+
+async function setupMic(){
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    source.connect(analyser);
+    window._micStreamToShare = micStream;
+  }catch(e){ console.log("Mic not granted."); }
+  try{
+    const camStream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById("cam-video").srcObject = camStream;
+    document.getElementById("cam-toggle").style.display = "block";
+    window._camStreamToShare = camStream;
+  }catch(e){ /* camera optional */ }
+}
+
+document.getElementById("cam-toggle").addEventListener("click", () => {
+  const box = document.getElementById("cam-box");
+  const showing = box.style.display !== "none";
+  box.style.display = showing ? "none" : "block";
+  document.getElementById("cam-toggle").textContent = showing ? "Show my cam" : "Hide my cam";
+});
+
+function startMediaShare(){
+  if(!roomRef) return;
+  if(!window._camStreamToShare && !window._micStreamToShare) return;
+  const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  const outStream = new MediaStream();
+  if(window._camStreamToShare) window._camStreamToShare.getTracks().forEach(t => outStream.addTrack(t));
+  if(window._micStreamToShare) window._micStreamToShare.getTracks().forEach(t => outStream.addTrack(t));
+  outStream.getTracks().forEach(t => pc.addTrack(t, outStream));
+  pc.onicecandidate = (e) => { if(e.candidate) roomRef.child("webrtc/playerCandidates").push(e.candidate.toJSON()); };
+  pc.createOffer().then(offer => {
+    pc.setLocalDescription(offer);
+    roomRef.child("webrtc/offer").set(JSON.stringify(offer));
+  });
+  roomRef.child("webrtc/answer").on("value", (snap) => {
+    if(snap.exists() && !pc.currentRemoteDescription){
+      pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(snap.val())));
+    }
+  });
+  roomRef.child("webrtc/adminCandidates").on("child_added", (snap) => {
+    pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(()=>{});
+  });
+}
+
+function animateBars(){
+  requestAnimationFrame(animateBars);
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+  for(let i=0;i<barEls.length;i++){
+    const v = dataArray[i % dataArray.length] || 0;
+    barEls[i].style.height = Math.max(6, (v/255)*80) + "px";
+  }
+}
+animateBars();
+
+tosContinue.addEventListener("click", async () => {
+  await setupMic();
+  if(!db){
+    document.getElementById("q-text").textContent = "Setup error: Firebase isn't configured yet. Tell whoever sent you this link.";
+    show("question-screen");
+    return;
+  }
+  if(!roomId){
+    const typed = document.getElementById("room-code-input").value.trim().toUpperCase();
+    if(!typed){
+      document.getElementById("q-text").textContent = "Enter the room code first.";
+      show("question-screen");
+      return;
+    }
+    roomId = typed;
+  }
+  localStorage.setItem("mindprank_last_room", roomId);
+  show("waiting-screen");
+  roomRef = db.ref("rooms/" + roomId);
+  db.ref(".info/connected").on("value", (snap) => {
+    document.getElementById("fb-diag").textContent = snap.val() === true
+      ? "Firebase connected — waiting for the game to start…"
+      : "Firebase not connected — check your internet.";
+  });
+  db.ref("rooms/" + roomId + "/playerConnected").set(true)
+    .catch(err => {
+      document.getElementById("fb-diag").textContent = "Error: " + err.message;
+      document.getElementById("fb-diag").style.color = "#ff8a80";
+    });
+  db.ref("rooms/" + roomId + "/playerConnected").onDisconnect().set(false);
+  listenToRoom();
+  startMediaShare();
+});
+
+let currentQuestion = "";
+function listenToRoom(){
+  roomRef.on("value", (snap) => {
+    const data = snap.val();
+    if(!data) return;
+
+    if(data.status === "asking"){
+      currentQuestion = data.question || "";
+      document.getElementById("q-text").textContent = currentQuestion;
+      const mode = data.questionMode || "yesno";
+      document.getElementById("choices").style.display = mode === "yesno" ? "flex" : "none";
+      document.getElementById("text-answer-row").style.display = mode === "open" ? "block" : "none";
+      document.getElementById("multi-choices").style.display = mode === "multi" ? "flex" : "none";
+      if(mode === "open") document.getElementById("text-answer-input").value = "";
+      if(mode === "yesno"){
+        document.getElementById("choice-yes").textContent = data.yesLabel || "Yes";
+        document.getElementById("choice-no").textContent = data.noLabel || "No";
+      }
+      if(mode === "multi"){
+        const box = document.getElementById("multi-choices");
+        box.innerHTML = "";
+        (data.multiOptions || []).forEach(opt => {
+          const b = document.createElement("button");
+          b.className = "multi-choice";
+          b.textContent = opt;
+          b.addEventListener("click", () => sendAnswer(opt));
+          box.appendChild(b);
+        });
+      }
+      show("question-screen");
+    }
+    if(data.status === "analyzing"){
+      show("listen-screen");
+    }
+    if(data.status === "answered"){
+      document.getElementById("answer-text").textContent = data.answer || "...";
+      document.getElementById("answer-q").textContent = currentQuestion ? `"${currentQuestion}"` : "";
+      if(data.answerFeedback === "correct") playDing();
+      if(data.answerFeedback === "wrong") playBuzz();
+      show("answer-screen");
+    }
+    if(data.status === "game" && data.game){
+      show("game-screen");
+      renderGame(data.game);
+    }
+  }, (err) => {
+    document.getElementById("fb-diag").textContent = "Error reading room: " + err.message;
+    document.getElementById("fb-diag").style.color = "#ff8a80";
+    show("waiting-screen");
+  });
+}
+
+function sendAnswer(val){
+  if(!roomRef) return;
+  roomRef.update({ playerAnswer: val, status: "analyzing" });
+  show("listen-screen");
+}
+document.getElementById("choice-yes").addEventListener("click", () => sendAnswer(document.getElementById("choice-yes").textContent));
+document.getElementById("choice-no").addEventListener("click", () => sendAnswer(document.getElementById("choice-no").textContent));
+document.getElementById("text-answer-submit").addEventListener("click", () => {
+  const val = document.getElementById("text-answer-input").value.trim();
+  if(!val) return;
+  sendAnswer(val);
+});
+document.getElementById("text-answer-input").addEventListener("keydown", (e) => {
+  if(e.key === "Enter") document.getElementById("text-answer-submit").click();
+});
+
+function endSession(){
+  if(roomRef) roomRef.child("playerConnected").set(false);
+  location.reload();
+}
+document.getElementById("back-btn").addEventListener("click", endSession);
+document.getElementById("game-back").addEventListener("click", endSession);
+
+["choice-yes","choice-no"].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener("mouseenter", ()=> el.classList.add("hover"));
+  el.addEventListener("mouseleave", ()=> el.classList.remove("hover"));
+});
+
+// ============ GAMES ============
+let lastGameSig = "";
+let snakeState = null;
+let snakeLoopHandle = null;
+let snakeCtx = document.getElementById("snake-canvas").getContext("2d");
+let wamState = null;
+let wamSpawnHandle = null;
+
+function renderGame(game){
+  document.getElementById("game-title").textContent =
+    game.type === "tictactoe" ? "Tic-Tac-Toe" : game.type === "snake" ? "Snake" :
+    game.type === "rps" ? "Rock Paper Scissors" : game.type === "reaction" ? "Reaction Test" :
+    game.type === "whackamole" ? "Whack-a-Mole" : "Game";
+
+  document.getElementById("ttt-grid").style.display = game.type === "tictactoe" ? "grid" : "none";
+  document.getElementById("ttt-status").style.display = game.type === "tictactoe" ? "block" : "none";
+  document.getElementById("snake-canvas").style.display = game.type === "snake" ? "block" : "none";
+  document.getElementById("snake-score").style.display = game.type === "snake" ? "block" : "none";
+  document.getElementById("rps-area").style.display = game.type === "rps" ? "block" : "none";
+  document.getElementById("reaction-area").style.display = game.type === "reaction" ? "flex" : "none";
+  document.getElementById("wam-area").style.display = game.type === "whackamole" ? "block" : "none";
+
+  const sig = game.type + JSON.stringify(game.config || {});
+  const isNewGame = sig !== lastGameSig;
+  lastGameSig = sig;
+
+  if(game.type === "tictactoe") renderTTT(game, isNewGame);
+  if(game.type === "snake") renderSnake(game, isNewGame);
+  if(game.type === "rps") renderRPS(game);
+  if(game.type === "reaction") renderReaction(game, isNewGame);
+  if(game.type === "whackamole") renderWAM(game, isNewGame);
+}
+
+// ---------- TIC TAC TOE ----------
+function renderTTT(game, isNewGame){
+  const cfg = game.config || { size: 3, playerSymbol: "X", adminSymbol: "O" };
+  const state = game.state || {};
+  const grid = document.getElementById("ttt-grid");
+  const size = cfg.size || 3;
+
+  if(isNewGame){
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = `repeat(${size}, 64px)`;
+    for(let i=0;i<size*size;i++){
+      const cell = document.createElement("div");
+      cell.className = "ttt-cell";
+      cell.style.width = "64px"; cell.style.height = "64px";
+      cell.dataset.idx = i;
+      cell.addEventListener("click", () => tttMove(i, cfg));
+      grid.appendChild(cell);
+    }
+  }
+
+  const board = state.board || Array(size*size).fill("");
+  [...grid.children].forEach((cell, i) => { cell.textContent = board[i] || ""; });
+
+  const statusEl = document.getElementById("ttt-status");
+  const prevWinner = statusEl.dataset.prevWinner || "";
+  if(state.winner && state.winner !== prevWinner){
+    if(state.winner === "player") playDing(); else if(state.winner === "admin") playBuzz();
+  }
+  statusEl.dataset.prevWinner = state.winner || "";
+  if(state.winner){
+    statusEl.textContent = state.winner === "draw" ? "Draw!" :
+      state.winner === "player" ? "You win!" : "You lose!";
+  }else{
+    statusEl.textContent = state.turn === "player" ? "Your turn" : "Their turn...";
+  }
+}
+
+function checkTTTWinner(board, size){
+  const lines = [];
+  for(let r=0;r<size;r++) lines.push([...Array(size).keys()].map(c => r*size+c));
+  for(let c=0;c<size;c++) lines.push([...Array(size).keys()].map(r => r*size+c));
+  lines.push([...Array(size).keys()].map(i => i*size+i));
+  lines.push([...Array(size).keys()].map(i => i*size + (size-1-i)));
+  for(const line of lines){
+    const vals = line.map(i => board[i]);
+    if(vals[0] && vals.every(v => v === vals[0])) return vals[0];
+  }
+  if(board.every(v => v)) return "draw";
+  return null;
+}
+
+function tttMove(idx, cfg){
+  if(!roomRef) return;
+  roomRef.child("game/state").once("value", (snap) => {
+    const state = snap.val() || {};
+    const size = cfg.size || 3;
+    const board = state.board || Array(size*size).fill("");
+    if(board[idx] || state.winner || state.turn === "admin") return;
+    board[idx] = cfg.playerSymbol || "X";
+    let winnerSym = checkTTTWinner(board, size);
+    let winner = null;
+    if(winnerSym === "draw") winner = "draw";
+    else if(winnerSym === (cfg.playerSymbol || "X")) winner = "player";
+    else if(winnerSym) winner = "admin";
+    roomRef.child("game/state").update({ board, turn: winner ? state.turn : "admin", winner: winner || null });
+  });
+}
+
+// ---------- SNAKE ----------
+function renderSnake(game, isNewGame){
+  const cfg = game.config || { boardSize: 15, appleCount: 3, speedMs: 150 };
+  if(isNewGame || !snakeState) startSnakeLocal(cfg);
+  if(game.cmd && game.cmd.id !== window._lastSnakeCmdId){
+    window._lastSnakeCmdId = game.cmd.id;
+    applySnakeCmd(game.cmd, cfg);
+  }
+}
+function startSnakeLocal(cfg){
+  const size = cfg.boardSize || 15;
+  snakeState = {
+    boardSize: size, speedMs: cfg.speedMs || 150,
+    snake: [{x: Math.floor(size/2), y: Math.floor(size/2)}],
+    dir: {x:1,y:0}, nextDir: {x:1,y:0}, apples: [], score: 0, gameOver: false
+  };
+  for(let i=0;i<(cfg.appleCount||3);i++) spawnApple();
+  const cellPx = Math.floor(360 / size);
+  document.getElementById("snake-canvas").width = cellPx*size;
+  document.getElementById("snake-canvas").height = cellPx*size;
+  if(snakeLoopHandle) clearInterval(snakeLoopHandle);
+  snakeLoopHandle = setInterval(snakeTick, snakeState.speedMs);
+  drawSnake();
+}
+function spawnApple(){
+  if(!snakeState) return;
+  const size = snakeState.boardSize;
+  let pos;
+  do{ pos = {x: Math.floor(Math.random()*size), y: Math.floor(Math.random()*size)}; }
+  while(snakeState.snake.some(s => s.x===pos.x && s.y===pos.y));
+  snakeState.apples.push(pos);
+}
+function snakeTick(){
+  if(!snakeState || snakeState.gameOver) return;
+  snakeState.dir = snakeState.nextDir;
+  const head = snakeState.snake[0];
+  const newHead = {x: head.x + snakeState.dir.x, y: head.y + snakeState.dir.y};
+  const size = snakeState.boardSize;
+  if(newHead.x<0||newHead.y<0||newHead.x>=size||newHead.y>=size ||
+     snakeState.snake.some(s=>s.x===newHead.x && s.y===newHead.y)){
+    snakeState.gameOver = true;
+    playBuzz();
+    syncSnakeToFirebase(); drawSnake();
+    return;
+  }
+  snakeState.snake.unshift(newHead);
+  const appleIdx = snakeState.apples.findIndex(a => a.x===newHead.x && a.y===newHead.y);
+  if(appleIdx >= 0){
+    snakeState.apples.splice(appleIdx,1);
+    snakeState.score++;
+    playDing();
+    spawnApple();
+  }else{
+    snakeState.snake.pop();
+  }
+  syncSnakeToFirebase(); drawSnake();
+}
+function syncSnakeToFirebase(){
+  if(!roomRef) return;
+  roomRef.child("game/state").update({
+    snake: snakeState.snake, apples: snakeState.apples,
+    score: snakeState.score, gameOver: snakeState.gameOver
+  });
+}
+function drawSnake(){
+  if(!snakeState) return;
+  const canvas = document.getElementById("snake-canvas");
+  const size = snakeState.boardSize;
+  const cellPx = canvas.width / size;
+  snakeCtx.fillStyle = "#0a0a0a"; snakeCtx.fillRect(0,0,canvas.width,canvas.height);
+  snakeCtx.fillStyle = "#e53935";
+  snakeState.apples.forEach(a => snakeCtx.fillRect(a.x*cellPx+2, a.y*cellPx+2, cellPx-4, cellPx-4));
+  snakeState.snake.forEach((s,i) => {
+    snakeCtx.fillStyle = i===0 ? "#8bc34a" : "#4caf50";
+    snakeCtx.fillRect(s.x*cellPx+1, s.y*cellPx+1, cellPx-2, cellPx-2);
+  });
+  document.getElementById("snake-score").textContent =
+    snakeState.gameOver ? `Game over — score: ${snakeState.score}` : `Score: ${snakeState.score}`;
+}
+function applySnakeCmd(cmd, cfg){
+  if(!snakeState) return;
+  if(cmd.setSpeed){
+    snakeState.speedMs = cmd.setSpeed;
+    if(snakeLoopHandle) clearInterval(snakeLoopHandle);
+    snakeLoopHandle = setInterval(snakeTick, snakeState.speedMs);
+  }
+  if(cmd.addApple) spawnApple();
+  if(cmd.removeApples) snakeState.apples = [];
+  if(cmd.growSnake){
+    const tail = snakeState.snake[snakeState.snake.length-1];
+    for(let i=0;i<cmd.growSnake;i++) snakeState.snake.push({...tail});
+  }
+  if(cmd.shrinkSnake){
+    for(let i=0;i<cmd.shrinkSnake;i++) if(snakeState.snake.length>1) snakeState.snake.pop();
+  }
+  if(cmd.teleportHead) snakeState.snake[0] = { x: cmd.teleportHead.x, y: cmd.teleportHead.y };
+  if(cmd.forceGameOver) snakeState.gameOver = true;
+  if(cmd.resetGame) startSnakeLocal(cfg);
+  syncSnakeToFirebase(); drawSnake();
+}
+document.addEventListener("keydown", (e) => {
+  if(!snakeState || snakeState.gameOver) return;
+  const map = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+    w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
+  const nd = map[e.key];
+  if(nd && !(nd.x === -snakeState.dir.x && nd.y === -snakeState.dir.y)) snakeState.nextDir = nd;
+});
+let touchStart = null;
+document.getElementById("snake-canvas").addEventListener("touchstart", (e) => {
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+});
+document.getElementById("snake-canvas").addEventListener("touchend", (e) => {
+  if(!touchStart || !snakeState) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  let nd;
+  if(Math.abs(dx) > Math.abs(dy)) nd = dx > 0 ? {x:1,y:0} : {x:-1,y:0};
+  else nd = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
+  if(!(nd.x === -snakeState.dir.x && nd.y === -snakeState.dir.y)) snakeState.nextDir = nd;
+});
+
+// ---------- ROCK PAPER SCISSORS ----------
+function renderRPS(game){
+  const state = game.state || {};
+  document.getElementById("rps-score").textContent = `You: ${state.playerScore || 0} — Them: ${state.adminScore || 0}`;
+  const statusEl = document.getElementById("rps-round-status");
+  const prevResult = statusEl.dataset.prevResult || "";
+  if(state.result && state.result !== prevResult){
+    if(state.result === "player") playDing(); else if(state.result === "admin") playBuzz();
+  }
+  statusEl.dataset.prevResult = (state.result || "") + (state.playerScore||0) + (state.adminScore||0);
+  if(state.result){
+    const resultText = state.result === "player" ? "You win this round!" :
+      state.result === "admin" ? "You lose this round!" : "Tie!";
+    statusEl.textContent = `${resultText} (${state.playerChoice || "?"} vs ${state.adminChoice || "?"})`;
+  }else if(state.playerChoice){
+    statusEl.textContent = "Waiting for their move...";
+  }else{
+    statusEl.textContent = "Choose your move";
+  }
+}
+document.querySelectorAll(".rps-choice").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if(!roomRef) return;
+    roomRef.child("game/state").update({ playerChoice: btn.dataset.choice, result: null, adminChoice: null });
+  });
+});
+
+// ---------- REACTION TEST ----------
+let reactionTimer = null;
+let reactionStartTime = null;
+let reactionWaitingForFlash = false;
+
+function renderReaction(game, isNewGame){
+  const cfg = game.config || { minDelayMs: 1500, maxDelayMs: 4000 };
+  const state = game.state || {};
+  if(isNewGame){
+    startReactionRound(cfg);
+  }
+  if(state.forcedResultMs && state.forcedResultMs !== window._lastForcedReaction){
+    window._lastForcedReaction = state.forcedResultMs;
+    document.getElementById("reaction-result").textContent = `Your time: ${state.forcedResultMs}ms (set by admin)`;
+  }
+}
+function startReactionRound(cfg){
+  const area = document.getElementById("reaction-area");
+  area.style.backgroundColor = "#000";
+  document.getElementById("reaction-text").textContent = "Wait for green...";
+  document.getElementById("reaction-result").textContent = "";
+  reactionWaitingForFlash = false;
+  if(reactionTimer) clearTimeout(reactionTimer);
+  const delay = cfg.minDelayMs + Math.random()*((cfg.maxDelayMs||4000)-(cfg.minDelayMs||1500));
+  reactionTimer = setTimeout(() => {
+    area.style.backgroundColor = "#2e7d32";
+    document.getElementById("reaction-text").textContent = "TAP NOW!";
+    reactionStartTime = performance.now();
+    reactionWaitingForFlash = true;
+  }, delay);
+}
+document.getElementById("reaction-area").addEventListener("click", () => {
+  if(!roomRef) return;
+  if(!reactionWaitingForFlash){
+    document.getElementById("reaction-result").textContent = "Too soon! Tapped before the flash.";
+    playBuzz();
+    roomRef.child("game/state").update({ lastResultMs: "too soon" });
+    return;
+  }
+  const ms = Math.round(performance.now() - reactionStartTime);
+  reactionWaitingForFlash = false;
+  document.getElementById("reaction-area").style.backgroundColor = "#000";
+  document.getElementById("reaction-text").textContent = "Nice.";
+  document.getElementById("reaction-result").textContent = `Your time: ${ms}ms`;
+  playDing();
+  roomRef.child("game/state").update({ lastResultMs: ms });
+});
+
+// ---------- WHACK-A-MOLE ----------
+function renderWAM(game, isNewGame){
+  const cfg = game.config || { gridSize: 3, spawnRateMs: 900 };
+  if(isNewGame || !wamState) startWAM(cfg);
+  else if(wamState && wamState.spawnRateMs !== cfg.spawnRateMs){
+    wamState.spawnRateMs = cfg.spawnRateMs;
+    if(wamSpawnHandle) clearInterval(wamSpawnHandle);
+    wamSpawnHandle = setInterval(spawnMole, wamState.spawnRateMs);
+  }
+  if(game.cmd && game.cmd.id !== window._lastWamCmdId){
+    window._lastWamCmdId = game.cmd.id;
+    if(game.cmd.forceGameOver) endWAM();
+    if(game.cmd.resetGame) startWAM(cfg);
+  }
+}
+function startWAM(cfg){
+  const grid = document.getElementById("wam-grid");
+  const n = cfg.gridSize || 3;
+  grid.innerHTML = "";
+  grid.style.gridTemplateColumns = `repeat(${n}, 70px)`;
+  const holes = [];
+  for(let i=0;i<n*n;i++){
+    const hole = document.createElement("div");
+    hole.className = "wam-hole";
+    hole.dataset.idx = i;
+    hole.addEventListener("click", () => whackMole(i));
+    grid.appendChild(hole);
+    holes.push(hole);
+  }
+  wamState = { holes, score: 0, spawnRateMs: cfg.spawnRateMs || 900, gameOver: false, activeIdx: -1 };
+  if(wamSpawnHandle) clearInterval(wamSpawnHandle);
+  wamSpawnHandle = setInterval(spawnMole, wamState.spawnRateMs);
+  document.getElementById("wam-score").textContent = "Score: 0";
+}
+function spawnMole(){
+  if(!wamState || wamState.gameOver) return;
+  wamState.holes.forEach(h => h.classList.remove("up"));
+  const idx = Math.floor(Math.random()*wamState.holes.length);
+  wamState.holes[idx].classList.add("up");
+  wamState.activeIdx = idx;
+  if(roomRef) roomRef.child("game/state").update({ score: wamState.score });
+}
+function whackMole(idx){
+  if(!wamState || wamState.gameOver) return;
+  if(idx === wamState.activeIdx){
+    wamState.score++;
+    wamState.holes[idx].classList.remove("up");
+    wamState.activeIdx = -1;
+    document.getElementById("wam-score").textContent = "Score: " + wamState.score;
+    playDing();
+    if(roomRef) roomRef.child("game/state").update({ score: wamState.score });
+  }
+}
+function endWAM(){
+  if(!wamState) return;
+  wamState.gameOver = true;
+  if(wamSpawnHandle) clearInterval(wamSpawnHandle);
+  document.getElementById("wam-score").textContent = `Game over — score: ${wamState.score}`;
+  playBuzz();
+}
+</script>
+</body>
+</html>
