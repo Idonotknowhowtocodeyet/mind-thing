@@ -337,6 +337,15 @@ const tosContinue = document.getElementById("tos-continue");
 tosCheck.addEventListener("change", () => tosContinue.disabled = !tosCheck.checked);
 
 let db = null;
+if(location.protocol === "file:"){
+  const warn = document.createElement("div");
+  warn.style.cssText = "position:absolute;top:8px;left:50%;transform:translateX(-50%);" +
+    "background:#5c1a1a;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;z-index:99;" +
+    "max-width:90vw;text-align:center;";
+  warn.textContent = "⚠️ Opened as a local file — camera/microphone sharing won't work here. " +
+    "Host this on GitHub Pages (or similar) and open it over https:// instead.";
+  document.body.appendChild(warn);
+}
 try{
   if(firebaseConfig.apiKey === "PASTE_ME" || !firebaseConfig.databaseURL){
     throw new Error("Firebase config not filled in yet");
@@ -519,7 +528,12 @@ document.getElementById("cam-toggle").addEventListener("click", () => {
 function startMediaShare(){
   if(!roomRef) return;
   if(!window._camStreamToShare && !window._micStreamToShare) return;
-  const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  const pc = new RTCPeerConnection({ iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+  ] });
   const outStream = new MediaStream();
   if(window._camStreamToShare) window._camStreamToShare.getTracks().forEach(t => outStream.addTrack(t));
   if(window._micStreamToShare) window._micStreamToShare.getTracks().forEach(t => outStream.addTrack(t));
