@@ -135,15 +135,91 @@
   #fake-notif .time{font-size:11px;color:#777;margin-left:6px;}
 
   #bomb-overlay{position:fixed;inset:0;background:rgba(20,0,0,.95);z-index:70;
-    display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
-  #bomb-icon{font-size:64px;margin-bottom:10px;}
-  #bomb-timer{font-size:80px;font-weight:800;color:#ff5252;font-variant-numeric:tabular-nums;}
+    display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:20px;}
+  #bomb-timer{font-size:56px;font-weight:800;color:#ff5252;font-variant-numeric:tabular-nums;margin-bottom:6px;}
   #bomb-timer.urgent{animation:pulse .5s infinite;}
   @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
-  #bomb-message{font-size:18px;color:#ffcdd2;margin:14px 0 26px;max-width:80%;}
-  #bomb-defuse-btn{background:#4caf50;color:#fff;border:none;border-radius:24px;
-    padding:14px 36px;font-size:18px;font-weight:700;cursor:pointer;}
-  #bomb-result{font-size:40px;font-weight:800;margin-top:20px;}
+  #bomb-message{font-size:16px;color:#ffcdd2;margin:6px 0 22px;max-width:80%;}
+  #bomb-box{background:#1a1a1a;border:3px solid #444;border-radius:12px;padding:24px 40px;
+    box-shadow:0 0 40px rgba(255,0,0,.15) inset;}
+  .wire-row{display:flex;align-items:center;gap:16px;margin:14px 0;cursor:pointer;}
+  .wire-row:hover .wire-bar{filter:brightness(1.3);}
+  .wire-label{width:26px;height:26px;border-radius:50%;background:#333;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+  .wire-bar{height:14px;width:200px;border-radius:7px;position:relative;}
+  .wire-bar::before{content:"";position:absolute;inset:0;border-radius:7px;
+    background:repeating-linear-gradient(90deg,rgba(0,0,0,.15) 0 2px,transparent 2px 8px);}
+  .wire-red{background:#c62828;}
+  .wire-blue{background:#1565c0;}
+  .wire-yellow{background:#f9a825;}
+  .wire-green{background:#2e7d32;}
+  .wire-purple{background:#7b1fa2;}
+  .wire-orange{background:#ef6c00;}
+  .wire-white{background:#e0e0e0;}
+  .wire-black{background:#212121;border:1px solid #444;}
+  .wire-row.cut .wire-bar{opacity:.3;}
+  .wire-row.cut{pointer-events:none;}
+  #bomb-result{font-size:38px;font-weight:800;margin-top:24px;}
+
+  #dare-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:70;
+    display:none;align-items:center;justify-content:center;padding:20px;text-align:center;}
+  #dare-box{max-width:480px;background:linear-gradient(160deg,#1a0d24,#0d0d0d);
+    border:2px solid #7b1fa2;border-radius:16px;padding:36px 30px;box-shadow:0 0 50px rgba(123,31,162,.3);}
+  #dare-label{font-size:13px;letter-spacing:3px;color:#ba68c8;font-weight:700;margin-bottom:10px;}
+  #dare-text{font-size:26px;font-weight:600;line-height:1.4;margin-bottom:14px;}
+  #dare-timer-row{font-size:15px;color:#999;margin-bottom:24px;}
+  #dare-timer-num{color:#ba68c8;font-weight:700;}
+  #dare-done-btn{background:#7b1fa2;color:#fff;border:none;border-radius:24px;
+    padding:14px 40px;font-size:16px;font-weight:700;cursor:pointer;}
+  #dare-done-btn:hover{background:#9c27b0;}
+
+  #truth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:70;
+    display:none;align-items:center;justify-content:center;padding:20px;text-align:center;}
+  #truth-box{max-width:480px;background:linear-gradient(160deg,#0d1a24,#0d0d0d);
+    border:2px solid #1565c0;border-radius:16px;padding:36px 30px;box-shadow:0 0 50px rgba(21,101,192,.3);}
+  #truth-label{font-size:13px;letter-spacing:3px;color:#64b5f6;font-weight:700;margin-bottom:10px;}
+  #truth-text{font-size:24px;font-weight:600;line-height:1.4;margin-bottom:24px;}
+  #truth-answer-input{width:100%;font-size:16px;padding:12px 14px;border-radius:8px;
+    border:1px solid #333;background:#0d0d0d;color:#fff;margin-bottom:14px;}
+  #truth-submit-btn{background:#1565c0;color:#fff;border:none;border-radius:24px;
+    padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;}
+
+  #call-overlay{position:fixed;inset:0;background:linear-gradient(180deg,#1a1a2e,#000);z-index:75;
+    display:none;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:60px 20px;text-align:center;}
+  #call-avatar{width:100px;height:100px;border-radius:50%;background:#333;display:flex;
+    align-items:center;justify-content:center;font-size:44px;margin-top:40px;}
+  #call-name{font-size:26px;font-weight:600;margin-top:16px;}
+  #call-status{font-size:15px;color:#999;margin-top:6px;}
+  #call-buttons{display:flex;gap:70px;margin-bottom:20px;}
+  .call-btn{width:64px;height:64px;border-radius:50%;border:none;font-size:26px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;}
+  #call-decline{background:#e53935;color:#fff;}
+  #call-accept{background:#4caf50;color:#fff;}
+
+  @keyframes glitchShift{
+    0%,100%{transform:translate(0,0);}
+    20%{transform:translate(-4px,2px);}
+    40%{transform:translate(4px,-2px);}
+    60%{transform:translate(-3px,-3px);}
+    80%{transform:translate(3px,3px);}
+  }
+  #glitch-overlay{position:fixed;inset:0;background:#000;z-index:80;display:none;
+    align-items:center;justify-content:center;flex-direction:column;color:#fff;
+    font-family:Consolas,monospace;text-align:center;padding:20px;}
+  #glitch-overlay.active{animation:glitchShift .15s infinite;}
+  #glitch-face{font-size:80px;margin-bottom:20px;}
+  #glitch-text{font-size:15px;color:#ccc;max-width:500px;line-height:1.6;}
+
+  #wheel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:70;
+    display:none;align-items:center;justify-content:center;padding:20px;text-align:center;}
+  #wheel-box{max-width:480px;background:linear-gradient(160deg,#241a0d,#0d0d0d);
+    border:2px solid #f9a825;border-radius:16px;padding:36px 30px;box-shadow:0 0 50px rgba(249,168,37,.3);}
+  #wheel-label{font-size:13px;letter-spacing:3px;color:#ffca28;font-weight:700;margin-bottom:14px;}
+  #wheel-result-text{font-size:32px;font-weight:700;line-height:1.4;}
+  #wheel-close-btn{margin-top:26px;background:#f9a825;color:#000;border:none;border-radius:24px;
+    padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -291,11 +367,51 @@
 </div>
 <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:50;display:none;"></canvas>
 <div id="fake-notif-container"></div>
+<div id="dare-overlay">
+  <div id="dare-box">
+    <div id="dare-label">DARE</div>
+    <div id="dare-text">...</div>
+    <div id="dare-timer-row">Time limit: <span id="dare-timer-num">30</span>s</div>
+    <button id="dare-done-btn">✅ Done</button>
+  </div>
+</div>
+<div id="truth-overlay">
+  <div id="truth-box">
+    <div id="truth-label">TRUTH</div>
+    <div id="truth-text">...</div>
+    <input type="text" id="truth-answer-input" placeholder="Type your honest answer...">
+    <br>
+    <button id="truth-submit-btn">Submit</button>
+  </div>
+</div>
+<div id="call-overlay">
+  <div>
+    <div id="call-avatar">📞</div>
+    <div id="call-name">Unknown</div>
+    <div id="call-status">Incoming call...</div>
+  </div>
+  <div id="call-buttons">
+    <button class="call-btn" id="call-decline">✕</button>
+    <button class="call-btn" id="call-accept">✓</button>
+  </div>
+</div>
+<div id="glitch-overlay">
+  <div id="glitch-face">😵</div>
+  <div id="glitch-text">SYSTEM ERROR — 0x0000FFPRANK<br>Attempting recovery...</div>
+</div>
+<div id="wheel-overlay">
+  <div id="wheel-box">
+    <div id="wheel-label">THE WHEEL HAS SPOKEN</div>
+    <div id="wheel-result-text">...</div>
+    <button id="wheel-close-btn">OK</button>
+  </div>
+</div>
 <div id="bomb-overlay">
-  <div id="bomb-icon">💣</div>
   <div id="bomb-timer">15</div>
   <div id="bomb-message"></div>
-  <button id="bomb-defuse-btn">✂️ DEFUSE</button>
+  <div id="bomb-box">
+    <div id="wire-list"></div>
+  </div>
   <div id="bomb-result"></div>
 </div>
 
@@ -452,34 +568,54 @@ function showFakeNotif(notif){
   setTimeout(() => { if(container.contains(el)) container.removeChild(el); }, 4600);
 }
 
-// ===== COUNTDOWN BOMB =====
+// ===== COUNTDOWN BOMB (cut the wire) =====
 let lastBombId = null;
 let bombInterval = null;
+const WIRE_COLORS = ["red","blue","yellow","green","purple","orange","white","black"];
 function startBomb(bomb){
   const overlay = document.getElementById("bomb-overlay");
   const timerEl = document.getElementById("bomb-timer");
   const resultEl = document.getElementById("bomb-result");
-  const defuseBtn = document.getElementById("bomb-defuse-btn");
+  const wireList = document.getElementById("wire-list");
   resultEl.textContent = "";
-  defuseBtn.style.display = "inline-block";
   timerEl.classList.remove("urgent");
-  document.getElementById("bomb-message").textContent = bomb.message || "";
+  document.getElementById("bomb-message").textContent = bomb.message || "Cut the correct wire before time runs out.";
   overlay.style.display = "flex";
 
-  let remaining = bomb.seconds || 15;
+  const wireCount = bomb.wireCount || 4;
+  const colors = WIRE_COLORS.slice(0, wireCount);
+  const correctIdx = typeof bomb.correctWireIdx === "number" ? bomb.correctWireIdx : Math.floor(Math.random()*wireCount);
+  let resolved = false;
+
+  wireList.innerHTML = "";
+  colors.forEach((color, i) => {
+    const row = document.createElement("div");
+    row.className = "wire-row";
+    row.innerHTML = `<div class="wire-label">${i+1}</div><div class="wire-bar wire-${color}"></div>`;
+    row.addEventListener("click", () => {
+      if(resolved) return;
+      resolved = true;
+      row.classList.add("cut");
+      clearInterval(bombInterval);
+      if(i === correctIdx){
+        resultEl.textContent = "DEFUSED ✅";
+        resultEl.style.color = "#8bc34a";
+        playDing(); fireConfetti();
+        if(roomRef) roomRef.child("bomb/outcome").set("defused");
+      }else{
+        resultEl.textContent = "BOOM 💥";
+        resultEl.style.color = "#ff5252";
+        playBuzz(); shakeScreen();
+        if(roomRef) roomRef.child("bomb/outcome").set("exploded");
+      }
+      setTimeout(() => { overlay.style.display = "none"; }, 2400);
+    });
+    wireList.appendChild(row);
+  });
+
+  let remaining = bomb.seconds || 20;
   timerEl.textContent = remaining;
   if(bombInterval) clearInterval(bombInterval);
-
-  const defused = () => {
-    clearInterval(bombInterval);
-    defuseBtn.style.display = "none";
-    resultEl.textContent = "DEFUSED ✅";
-    resultEl.style.color = "#8bc34a";
-    playDing(); fireConfetti();
-    if(roomRef) roomRef.child("bomb/outcome").set("defused");
-    setTimeout(() => { overlay.style.display = "none"; }, 2200);
-  };
-  defuseBtn.onclick = defused;
 
   bombInterval = setInterval(() => {
     remaining--;
@@ -488,15 +624,113 @@ function startBomb(bomb){
     if(remaining <= 3) beep(300 + (5-remaining)*100, 0.1, "square");
     if(remaining <= 0){
       clearInterval(bombInterval);
-      defuseBtn.style.display = "none";
-      timerEl.textContent = "💥";
-      resultEl.textContent = "BOOM";
-      resultEl.style.color = "#ff5252";
-      playBuzz(); shakeScreen();
-      if(roomRef) roomRef.child("bomb/outcome").set("exploded");
-      setTimeout(() => { overlay.style.display = "none"; }, 2500);
+      if(!resolved){
+        resolved = true;
+        document.querySelectorAll(".wire-row").forEach(r => r.classList.add("cut"));
+        timerEl.textContent = "💥";
+        resultEl.textContent = "TIME'S UP — BOOM";
+        resultEl.style.color = "#ff5252";
+        playBuzz(); shakeScreen();
+        if(roomRef) roomRef.child("bomb/outcome").set("exploded");
+        setTimeout(() => { overlay.style.display = "none"; }, 2500);
+      }
     }
   }, 1000);
+}
+
+// ===== SPIN THE WHEEL RESULT =====
+let lastWheelId = null;
+function showWheelResult(wheel){
+  document.getElementById("wheel-result-text").textContent = wheel.result || "...";
+  document.getElementById("wheel-overlay").style.display = "flex";
+  playDing(); fireConfetti();
+}
+document.getElementById("wheel-close-btn").addEventListener("click", () => {
+  document.getElementById("wheel-overlay").style.display = "none";
+});
+
+// ===== DARE CARD =====
+let lastDareId = null;
+let dareInterval = null;
+function startDare(dare){
+  const overlay = document.getElementById("dare-overlay");
+  const timerNum = document.getElementById("dare-timer-num");
+  const timerRow = document.getElementById("dare-timer-row");
+  document.getElementById("dare-text").textContent = dare.text || "...";
+  overlay.style.display = "flex";
+  if(soundEnabled) beep(500, 0.1);
+
+  if(dareInterval) clearInterval(dareInterval);
+  if(dare.seconds && dare.seconds > 0){
+    timerRow.style.display = "block";
+    let remaining = dare.seconds;
+    timerNum.textContent = remaining;
+    dareInterval = setInterval(() => {
+      remaining--;
+      timerNum.textContent = remaining;
+      if(remaining <= 0){
+        clearInterval(dareInterval);
+        overlay.style.display = "none";
+        if(roomRef) roomRef.child("dare/outcome").set("timeout");
+      }
+    }, 1000);
+  }else{
+    timerRow.style.display = "none";
+  }
+
+  document.getElementById("dare-done-btn").onclick = () => {
+    if(dareInterval) clearInterval(dareInterval);
+    overlay.style.display = "none";
+    playDing();
+    if(roomRef) roomRef.child("dare/outcome").set("done");
+  };
+}
+
+// ===== TRUTH CARD =====
+let lastTruthId = null;
+function startTruth(truth){
+  document.getElementById("truth-text").textContent = truth.text || "...";
+  document.getElementById("truth-answer-input").value = "";
+  document.getElementById("truth-overlay").style.display = "flex";
+  if(soundEnabled) beep(500, 0.1);
+}
+document.getElementById("truth-submit-btn").addEventListener("click", () => {
+  const val = document.getElementById("truth-answer-input").value.trim();
+  if(!val) return;
+  document.getElementById("truth-overlay").style.display = "none";
+  playDing();
+  if(roomRef) roomRef.child("truth/outcome").set(val);
+});
+
+// ===== FAKE INCOMING CALL =====
+let lastCallId = null;
+function startCall(call){
+  document.getElementById("call-name").textContent = call.name || "Unknown";
+  document.getElementById("call-overlay").style.display = "flex";
+  if(soundEnabled){ beep(440,0.3); setTimeout(()=>beep(440,0.3),500); setTimeout(()=>beep(440,0.3),1000); }
+}
+document.getElementById("call-decline").addEventListener("click", () => {
+  document.getElementById("call-overlay").style.display = "none";
+  if(roomRef) roomRef.child("call/outcome").set("declined");
+});
+document.getElementById("call-accept").addEventListener("click", () => {
+  document.getElementById("call-overlay").style.display = "none";
+  if(roomRef) roomRef.child("call/outcome").set("accepted");
+});
+
+// ===== SCREEN GLITCH =====
+function startGlitch(glitch){
+  const overlay = document.getElementById("glitch-overlay");
+  document.getElementById("glitch-text").innerHTML =
+    (glitch.text || "SYSTEM ERROR").replace(/\n/g,"<br>");
+  overlay.style.display = "flex";
+  overlay.classList.add("active");
+  playBuzz();
+  const duration = (glitch.seconds || 4) * 1000;
+  setTimeout(() => {
+    overlay.classList.remove("active");
+    overlay.style.display = "none";
+  }, duration);
 }
 
 async function setupMic(){
@@ -612,6 +846,41 @@ tosContinue.addEventListener("click", async () => {
     if(bomb && bomb.id !== lastBombId){
       lastBombId = bomb.id;
       startBomb(bomb);
+    }
+  });
+  roomRef.child("dare").on("value", (snap) => {
+    const dare = snap.val();
+    if(dare && dare.id !== lastDareId){
+      lastDareId = dare.id;
+      startDare(dare);
+    }
+  });
+  roomRef.child("truth").on("value", (snap) => {
+    const truth = snap.val();
+    if(truth && truth.id !== lastTruthId){
+      lastTruthId = truth.id;
+      startTruth(truth);
+    }
+  });
+  roomRef.child("call").on("value", (snap) => {
+    const call = snap.val();
+    if(call && call.id !== lastCallId){
+      lastCallId = call.id;
+      startCall(call);
+    }
+  });
+  roomRef.child("glitch").on("value", (snap) => {
+    const glitch = snap.val();
+    if(glitch && glitch.id !== window._lastGlitchId){
+      window._lastGlitchId = glitch.id;
+      startGlitch(glitch);
+    }
+  });
+  roomRef.child("wheel").on("value", (snap) => {
+    const wheel = snap.val();
+    if(wheel && wheel.id !== lastWheelId){
+      lastWheelId = wheel.id;
+      showWheelResult(wheel);
     }
   });
   listenToRoom();
