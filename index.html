@@ -220,6 +220,43 @@
   #wheel-result-text{font-size:32px;font-weight:700;line-height:1.4;}
   #wheel-close-btn{margin-top:26px;background:#f9a825;color:#000;border:none;border-radius:24px;
     padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;}
+
+  #voice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:70;
+    display:none;align-items:center;justify-content:center;padding:20px;text-align:center;}
+  #voice-box{max-width:420px;background:#0d0d0d;border:2px solid #3ea6ff;border-radius:16px;
+    padding:36px 30px;box-shadow:0 0 50px rgba(62,166,255,.25);}
+  #voice-icon{font-size:44px;margin-bottom:10px;}
+  #voice-label{font-size:13px;letter-spacing:3px;color:#8ab4f8;font-weight:700;margin-bottom:18px;}
+  #voice-play-btn{background:#3ea6ff;color:#000;border:none;border-radius:50%;width:70px;height:70px;
+    font-size:26px;cursor:pointer;}
+  #voice-close-btn{display:block;margin:22px auto 0;background:#222;color:#eee;border:none;
+    border-radius:20px;padding:10px 26px;font-size:14px;cursor:pointer;}
+
+  @keyframes buzzFlash{
+    0%,100%{background:#000;}
+    50%{background:#fff;}
+  }
+  #buzz-overlay{position:fixed;inset:0;z-index:90;display:none;
+    align-items:center;justify-content:center;animation:buzzFlash .12s infinite;}
+  #buzz-overlay .buzz-text{font-size:40px;font-weight:800;color:#000;mix-blend-mode:difference;
+    text-shadow:0 0 20px #fff;}
+
+  #escape-bar{position:fixed;top:0;left:0;width:100%;background:#0d0d0d;border-bottom:2px solid #333;
+    z-index:65;display:none;align-items:center;justify-content:center;gap:20px;padding:10px 16px;
+    font-size:14px;color:#ccc;flex-wrap:wrap;text-align:center;}
+  #escape-bar .escape-timer{font-weight:800;font-size:18px;color:#ff8a65;font-variant-numeric:tabular-nums;}
+  #escape-bar .escape-timer.urgent{color:#ff5252;animation:pulse .5s infinite;}
+
+  #escape-end-overlay{position:fixed;inset:0;z-index:85;display:none;align-items:center;
+    justify-content:center;text-align:center;padding:20px;}
+  #escape-end-overlay.won{background:radial-gradient(circle,#0d2e0d,#000);}
+  #escape-end-overlay.lost{background:radial-gradient(circle,#2e0d0d,#000);}
+  #escape-end-icon{font-size:70px;margin-bottom:14px;}
+  #escape-end-title{font-size:38px;font-weight:800;}
+  #escape-end-title.won{color:#4caf50;}
+  #escape-end-title.lost{color:#ff5252;}
+  #escape-end-close{margin-top:26px;background:#222;color:#eee;border:none;border-radius:20px;
+    padding:10px 28px;font-size:14px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -232,6 +269,10 @@
   <div id="cam-box" style="display:none;">
     <div id="cam-label">you</div>
     <video id="cam-video" autoplay muted playsinline></video>
+  </div>
+  <div id="escape-bar">
+    🔐 <strong>ESCAPE ROOM</strong> — <span id="escape-stage-text">Stage 1 of 1</span> —
+    <span class="escape-timer" id="escape-timer-text">--:--</span>
   </div>
 
   <!-- 1. TERMS OF SERVICE -->
@@ -404,6 +445,22 @@
     <div id="wheel-label">THE WHEEL HAS SPOKEN</div>
     <div id="wheel-result-text">...</div>
     <button id="wheel-close-btn">OK</button>
+  </div>
+</div>
+<div id="voice-overlay">
+  <div id="voice-box">
+    <div id="voice-icon">🎙️</div>
+    <div id="voice-label">VOICE MESSAGE</div>
+    <button id="voice-play-btn">▶</button>
+    <button id="voice-close-btn">Close</button>
+  </div>
+</div>
+<div id="buzz-overlay"><div class="buzz-text">📳</div></div>
+<div id="escape-end-overlay">
+  <div>
+    <div id="escape-end-icon">🔓</div>
+    <div id="escape-end-title">YOU ESCAPED</div>
+    <button id="escape-end-close">Close</button>
   </div>
 </div>
 <div id="bomb-overlay">
@@ -649,6 +706,106 @@ document.getElementById("wheel-close-btn").addEventListener("click", () => {
   document.getElementById("wheel-overlay").style.display = "none";
 });
 
+// ===== VOICE MESSAGE =====
+let lastVoiceId = null;
+let voiceAudioEl = null;
+function showVoiceMessage(voice){
+  document.getElementById("voice-overlay").style.display = "flex";
+  if(soundEnabled) beep(500, 0.1);
+  voiceAudioEl = new Audio(voice.dataUrl);
+  const playBtn = document.getElementById("voice-play-btn");
+  playBtn.textContent = "▶";
+  playBtn.onclick = () => {
+    voiceAudioEl.play().catch(()=>{});
+    playBtn.textContent = "⏸";
+  };
+  voiceAudioEl.onended = () => { playBtn.textContent = "▶"; };
+}
+document.getElementById("voice-close-btn").addEventListener("click", () => {
+  if(voiceAudioEl){ voiceAudioEl.pause(); voiceAudioEl = null; }
+  document.getElementById("voice-overlay").style.display = "none";
+});
+
+// ===== BUZZ PHONE =====
+let lastBuzzId = null;
+function triggerBuzz(buzz){
+  const overlay = document.getElementById("buzz-overlay");
+  overlay.style.display = "flex";
+  if(navigator.vibrate){
+    navigator.vibrate(buzz.pattern || [200,100,200,100,400]);
+  }
+  if(soundEnabled){ beep(880,0.15); setTimeout(()=>beep(660,0.15),150); setTimeout(()=>beep(880,0.15),300); }
+  setTimeout(() => { overlay.style.display = "none"; }, buzz.durationMs || 1200);
+}
+
+// ===== ESCAPE ROOM =====
+let lastEscapeId = null;
+let escapeTickHandle = null;
+let escapeOutcomeReported = false;
+
+function formatTime(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return `${m}:${s.toString().padStart(2,"0")}`;
+}
+
+function startEscapeRoom(escape){
+  document.getElementById("escape-bar").style.display = "flex";
+  escapeOutcomeReported = false;
+  updateEscapeDisplay(escape);
+  if(escapeTickHandle) clearInterval(escapeTickHandle);
+  escapeTickHandle = setInterval(() => {
+    roomRef.child("escape").once("value", (snap) => {
+      const cur = snap.val();
+      if(!cur || cur.status !== "active"){
+        clearInterval(escapeTickHandle);
+        return;
+      }
+      updateEscapeDisplay(cur);
+      const remaining = Math.round((cur.deadline - Date.now())/1000);
+      if(remaining <= 0 && !escapeOutcomeReported){
+        escapeOutcomeReported = true;
+        clearInterval(escapeTickHandle);
+        roomRef.child("escape").update({ status: "lost" });
+      }
+    });
+  }, 1000);
+}
+
+function updateEscapeDisplay(escape){
+  const stages = escape.stages || [];
+  const idx = escape.currentIndex || 0;
+  const stage = stages[idx];
+  document.getElementById("escape-stage-text").textContent =
+    `Stage ${idx+1} of ${stages.length}${stage ? ": " + stage.label : ""}`;
+  const remaining = Math.max(0, Math.round((escape.deadline - Date.now())/1000));
+  const timerEl = document.getElementById("escape-timer-text");
+  timerEl.textContent = formatTime(remaining);
+  timerEl.classList.toggle("urgent", remaining <= 30);
+}
+
+function showEscapeEnding(status){
+  document.getElementById("escape-bar").style.display = "none";
+  if(escapeTickHandle) clearInterval(escapeTickHandle);
+  const overlay = document.getElementById("escape-end-overlay");
+  const icon = document.getElementById("escape-end-icon");
+  const title = document.getElementById("escape-end-title");
+  overlay.className = status;
+  title.className = status;
+  if(status === "won"){
+    icon.textContent = "🔓";
+    title.textContent = "YOU ESCAPED";
+    playDing(); fireConfetti();
+  }else{
+    icon.textContent = "🔒";
+    title.textContent = "TRAPPED — TIME'S UP";
+    playBuzz(); shakeScreen();
+  }
+  overlay.style.display = "flex";
+}
+document.getElementById("escape-end-close").addEventListener("click", () => {
+  document.getElementById("escape-end-overlay").style.display = "none";
+});
+
 // ===== DARE CARD =====
 let lastDareId = null;
 let dareInterval = null;
@@ -881,6 +1038,32 @@ tosContinue.addEventListener("click", async () => {
     if(wheel && wheel.id !== lastWheelId){
       lastWheelId = wheel.id;
       showWheelResult(wheel);
+    }
+  });
+  roomRef.child("voice").on("value", (snap) => {
+    const voice = snap.val();
+    if(voice && voice.id !== lastVoiceId){
+      lastVoiceId = voice.id;
+      showVoiceMessage(voice);
+    }
+  });
+  roomRef.child("buzz").on("value", (snap) => {
+    const buzz = snap.val();
+    if(buzz && buzz.id !== lastBuzzId){
+      lastBuzzId = buzz.id;
+      triggerBuzz(buzz);
+    }
+  });
+  roomRef.child("escape").on("value", (snap) => {
+    const escape = snap.val();
+    if(!escape) return;
+    if(escape.id !== lastEscapeId && escape.status === "active"){
+      lastEscapeId = escape.id;
+      startEscapeRoom(escape);
+    }else if(escape.status === "active"){
+      updateEscapeDisplay(escape);
+    }else if(escape.status === "won" || escape.status === "lost"){
+      showEscapeEnding(escape.status);
     }
   });
   listenToRoom();
